@@ -39,20 +39,34 @@ export default function FavoriteEventsScreen() {
     return unsubscribe;
   }, [userId]);
 
-  const handleDelete = (id: string) => {
-    Alert.alert("Delete Event", "Are you sure you want to delete this event?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Delete",
-        style: "destructive",
-        onPress: async () => {
-          await deleteDoc(doc(db, "events", id));
-          if (userId) {
-            await deleteDoc(doc(db, "users", userId, "favorites", id));
-          }
+  const handleRemoveFromFavorites = async (id: string) => {
+    Alert.alert(
+      "Remove from Favorites", 
+      "Are you sure you want to remove this event from your favorites?",
+      [
+        { 
+          text: "Cancel", 
+          style: "cancel" 
         },
-      },
-    ]);
+        {
+          text: "Remove",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              if (userId) {
+                await deleteDoc(doc(db, "users", userId, "favorites", id));
+              }
+            } catch (error) {
+              console.error("Error removing from favorites:", error);
+              Alert.alert(
+                "Error", 
+                "Failed to remove from favorites. Please try again."
+              );
+            }
+          },
+        },
+      ]
+    );
   };
 
   const renderItem = ({ item }: any) => (
@@ -76,7 +90,7 @@ export default function FavoriteEventsScreen() {
         </View>
         <TouchableOpacity
           style={[styles.iconButton, styles.deleteButton]}
-          onPress={() => handleDelete(item.id)}
+          onPress={() => handleRemoveFromFavorites(item.id)}
         >
           <Icon name="trash-outline" size={20} color="#fff" />
         </TouchableOpacity>
