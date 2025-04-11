@@ -6,12 +6,14 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { collection, onSnapshot, deleteDoc, doc } from "firebase/firestore";
 import { auth, db } from "../services/firebaseConfig";
 import { LinearGradient } from "expo-linear-gradient";
 import Icon from "react-native-vector-icons/Ionicons";
 import * as Animatable from "react-native-animatable";
+import moment from "moment";
 
 export default function FavoriteEventsScreen() {
   const [favorites, setFavorites] = useState<any[]>([]);
@@ -28,6 +30,7 @@ export default function FavoriteEventsScreen() {
       const data = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
+        formattedDate: moment(doc.data().date).format("MMM D, YYYY h:mm A"),
       }));
       setFavorites(data);
       setLoading(false);
@@ -36,22 +39,48 @@ export default function FavoriteEventsScreen() {
     return unsubscribe;
   }, [userId]);
 
-  const handleUnfavorite = async (id: string) => {
-    if (!userId) return;
-
-    const favRef = doc(db, "users", userId, "favorites", id);
-    await deleteDoc(favRef);
+  const handleDelete = (id: string) => {
+    Alert.alert("Delete Event", "Are you sure you want to delete this event?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          await deleteDoc(doc(db, "events", id));
+          if (userId) {
+            await deleteDoc(doc(db, "users", userId, "favorites", id));
+          }
+        },
+      },
+    ]);
   };
 
   const renderItem = ({ item }: any) => (
     <Animatable.View animation="fadeInUp" duration={600} style={styles.eventCard}>
-      <Text style={styles.eventTitle}>{item.title}</Text>
-      <TouchableOpacity
-        style={styles.favoriteButton}
-        onPress={() => handleUnfavorite(item.id)}
-      >
-        <Icon name="heart" size={22} color="#fff" />
-      </TouchableOpacity>
+      <View style={{ flex: 1 }}>
+        <Text style={styles.eventTitle}>{item.title}</Text>
+        {item.description ? (
+          <Text style={styles.eventDescription} numberOfLines={2}>
+            {item.description}
+          </Text>
+        ) : null}
+        <View style={styles.dateRow}>
+          <Icon name="calendar-outline" size={14} color="#aaa" />
+          <Text style={styles.eventDate}>{item.formattedDate}</Text>
+        </View>
+      </View>
+
+      <View style={styles.actionButtons}>
+        <View style={styles.iconStatic}>
+          <Icon name="heart" size={20} color="#fff" />
+        </View>
+        <TouchableOpacity
+          style={[styles.iconButton, styles.deleteButton]}
+          onPress={() => handleDelete(item.id)}
+        >
+          <Icon name="trash-outline" size={20} color="#fff" />
+        </TouchableOpacity>
+      </View>
     </Animatable.View>
   );
 
@@ -95,7 +124,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
+    gap: 12,
     shadowColor: "#000",
     shadowOpacity: 0.25,
     shadowRadius: 5,
@@ -105,13 +135,39 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 16,
     fontWeight: "600",
-    flex: 1,
+    marginBottom: 4,
   },
-  favoriteButton: {
+  eventDescription: {
+    color: "#ccc",
+    fontSize: 14,
+    marginBottom: 6,
+  },
+  dateRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+  },
+  eventDate: {
+    color: "#aaa",
+    fontSize: 13,
+    marginLeft: 6,
+  },
+  actionButtons: {
+    flexDirection: "row",
+    alignSelf: "flex-start",
+    gap: 8,
+  },
+  iconStatic: {
     backgroundColor: "#ff69b4",
     padding: 10,
     borderRadius: 50,
-    marginLeft: 12,
+  },
+  iconButton: {
+    padding: 10,
+    borderRadius: 50,
+  },
+  deleteButton: {
+    backgroundColor: "#ff4d4d",
   },
   noFavoritesText: {
     color: "#ccc",
