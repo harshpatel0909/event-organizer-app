@@ -12,7 +12,7 @@ import {
   Keyboard,
   TouchableWithoutFeedback,
 } from "react-native";
-import { db } from "../services/firebaseConfig";
+import { db, auth } from "../services/firebaseConfig";
 import { doc, updateDoc, getDoc } from "firebase/firestore";
 import * as Animatable from "react-native-animatable";
 import { LinearGradient } from "expo-linear-gradient";
@@ -29,17 +29,24 @@ export default function EditEventScreen({ route, navigation }: any) {
   const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState(false);
 
+  const userId = auth.currentUser?.uid;
+
   useEffect(() => {
     const fetchEvent = async () => {
+      if (!userId) return;
+
       setLoading(true);
       try {
-        const docRef = doc(db, "events", eventId);
+        const docRef = doc(db, "users", userId, "events", eventId);
         const docSnap = await getDoc(docRef);
         if (docSnap.exists()) {
           const data = docSnap.data();
           setTitle(data.title || "");
           setDescription(data.description || "");
           setDate(new Date(data.date));
+        } else {
+          Alert.alert("Error", "Event not found.");
+          navigation.goBack();
         }
       } catch (err) {
         Alert.alert("Error", "Failed to load event.");
@@ -52,14 +59,14 @@ export default function EditEventScreen({ route, navigation }: any) {
   }, []);
 
   const handleUpdate = async () => {
-    if (!title.trim() || !description.trim() || !date) {
+    if (!title.trim() || !description.trim() || !date || !userId) {
       Alert.alert("Validation", "All fields are required.");
       return;
     }
 
     setUpdating(true);
     try {
-      const docRef = doc(db, "events", eventId);
+      const docRef = doc(db, "users", userId, "events", eventId);
       await updateDoc(docRef, {
         title,
         description,
@@ -96,7 +103,10 @@ export default function EditEventScreen({ route, navigation }: any) {
   };
 
   return (
-    <LinearGradient colors={["#0f2027", "#203a43", "#2c5364"]} style={styles.container}>
+    <LinearGradient
+      colors={["#0f2027", "#203a43", "#2c5364"]}
+      style={styles.container}
+    >
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : undefined}
@@ -107,13 +117,22 @@ export default function EditEventScreen({ route, navigation }: any) {
             <Text style={styles.subtitle}>Update your event details</Text>
           </Animatable.View>
 
-          <Animatable.View animation="fadeInUp" delay={200} style={styles.formContainer}>
+          <Animatable.View
+            animation="fadeInUp"
+            delay={200}
+            style={styles.formContainer}
+          >
             {loading ? (
               <ActivityIndicator size="large" color="#00c6ff" />
             ) : (
               <>
                 <View style={styles.inputContainer}>
-                  <Icon name="create-outline" size={20} color="#ccc" style={styles.icon} />
+                  <Icon
+                    name="create-outline"
+                    size={20}
+                    color="#ccc"
+                    style={styles.icon}
+                  />
                   <TextInput
                     value={title}
                     onChangeText={setTitle}
@@ -123,8 +142,15 @@ export default function EditEventScreen({ route, navigation }: any) {
                   />
                 </View>
 
-                <View style={[styles.inputContainer, { alignItems: "flex-start" }]}>
-                  <Icon name="document-text-outline" size={20} color="#ccc" style={[styles.icon, { marginTop: 8 }]} />
+                <View
+                  style={[styles.inputContainer, { alignItems: "flex-start" }]}
+                >
+                  <Icon
+                    name="document-text-outline"
+                    size={20}
+                    color="#ccc"
+                    style={[styles.icon, { marginTop: 8 }]}
+                  />
                   <TextInput
                     value={description}
                     onChangeText={setDescription}
@@ -142,7 +168,12 @@ export default function EditEventScreen({ route, navigation }: any) {
                     style={styles.dateTimeButton}
                     onPress={() => setShowDatePicker(true)}
                   >
-                    <Icon name="calendar-outline" size={18} color="#ccc" style={styles.icon} />
+                    <Icon
+                      name="calendar-outline"
+                      size={18}
+                      color="#ccc"
+                      style={styles.icon}
+                    />
                     <Text style={styles.dateTimeText}>
                       {date?.toLocaleDateString()}
                     </Text>
@@ -152,9 +183,17 @@ export default function EditEventScreen({ route, navigation }: any) {
                     style={styles.dateTimeButton}
                     onPress={() => setShowTimePicker(true)}
                   >
-                    <Icon name="time-outline" size={18} color="#ccc" style={styles.icon} />
+                    <Icon
+                      name="time-outline"
+                      size={18}
+                      color="#ccc"
+                      style={styles.icon}
+                    />
                     <Text style={styles.dateTimeText}>
-                      {date?.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {date?.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -199,35 +238,15 @@ export default function EditEventScreen({ route, navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  inner: {
-    flex: 1,
-    justifyContent: "center",
-    paddingHorizontal: 24,
-  },
-  header: {
-    marginBottom: 30,
-  },
-  title: {
-    fontSize: 30,
-    color: "#fff",
-    fontWeight: "bold",
-  },
-  subtitle: {
-    fontSize: 16,
-    color: "#ccc",
-    marginTop: 4,
-  },
+  container: { flex: 1 },
+  inner: { flex: 1, justifyContent: "center", paddingHorizontal: 24 },
+  header: { marginBottom: 30 },
+  title: { fontSize: 30, color: "#fff", fontWeight: "bold" },
+  subtitle: { fontSize: 16, color: "#ccc", marginTop: 4 },
   formContainer: {
     backgroundColor: "rgba(255,255,255,0.05)",
     padding: 20,
     borderRadius: 20,
-    shadowColor: "#000",
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
   },
   inputContainer: {
     flexDirection: "row",
@@ -236,32 +255,23 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     marginBottom: 20,
   },
-  icon: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    color: "#fff",
-    paddingVertical: 10,
-  },
+  icon: { marginRight: 10 },
+  input: { flex: 1, color: "#fff", paddingVertical: 10 },
   dateTimeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 12,
   },
   dateTimeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.08)",
     padding: 10,
     borderRadius: 8,
     flex: 1,
     marginHorizontal: 4,
   },
-  dateTimeText: {
-    color: '#fff',
-    fontSize: 14,
-  },
+  dateTimeText: { color: "#fff", fontSize: 14 },
   updateButton: {
     backgroundColor: "#00c6ff",
     paddingVertical: 14,
@@ -269,9 +279,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 20,
   },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
+  buttonText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
 });

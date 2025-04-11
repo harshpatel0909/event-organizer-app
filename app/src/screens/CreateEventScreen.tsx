@@ -14,7 +14,7 @@ import {
   ScrollView,
 } from "react-native";
 import { collection, addDoc } from "firebase/firestore";
-import { db } from "../services/firebaseConfig";
+import { auth, db } from "../services/firebaseConfig";
 import * as Animatable from "react-native-animatable";
 import { LinearGradient } from "expo-linear-gradient";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -31,29 +31,31 @@ export default function CreateEventScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
 
   const handleAddEvent = async () => {
-    if (!title.trim()) {
-      Alert.alert("Validation", "Event title is required.");
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+      Alert.alert("Authentication Error", "You must be logged in.");
       return;
     }
-    if (!description.trim()) {
-      Alert.alert("Validation", "Event description is required.");
+
+    if (!title.trim() || !description.trim()) {
+      Alert.alert("Validation", "Please enter title and description.");
       return;
     }
 
     setLoading(true);
     try {
-      await addDoc(collection(db, "events"), {
+      await addDoc(collection(db, "users", userId, "events"), {
         title,
         description,
         date: date.toISOString(),
         createdAt: new Date().toISOString(),
       });
       Alert.alert("Success", "Event created successfully!", [
-        { text: "OK", onPress: () => navigation.goBack() }
+        { text: "OK", onPress: () => navigation.goBack() },
       ]);
     } catch (error) {
       console.error("Error creating event:", error);
-      Alert.alert("Error", "Failed to create event. Please try again.");
+      Alert.alert("Error", "Failed to create event.");
     } finally {
       setLoading(false);
     }
@@ -79,85 +81,103 @@ export default function CreateEventScreen({ navigation }: any) {
     }
   };
 
-  const formatDate = (date: Date) => {
-    return moment(date).format("MMM D, YYYY h:mm A");
-  };
+  const formatDate = (date: Date) => moment(date).format("MMM D, YYYY h:mm A");
 
   return (
-    <LinearGradient colors={["#0f2027", "#203a43", "#2c5364"]} style={styles.container}>
+    <LinearGradient
+      colors={["#0f2027", "#203a43", "#2c5364"]}
+      style={styles.container}
+    >
       <StatusBar style="light" />
-      <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.inner}
           keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 0}
         >
-          <ScrollView 
-            contentContainerStyle={styles.scrollContainer}
-            showsVerticalScrollIndicator={false}
-            keyboardShouldPersistTaps="handled"
-          >
+          <ScrollView contentContainerStyle={styles.scrollContainer}>
             <Animatable.View animation="fadeInDown" style={styles.header}>
               <Text style={styles.title}>Create New Event</Text>
             </Animatable.View>
 
-            <Animatable.View animation="fadeInUp" delay={300} style={styles.formContainer}>
+            <Animatable.View
+              animation="fadeInUp"
+              delay={300}
+              style={styles.formContainer}
+            >
               <View style={styles.inputContainer}>
-                <Icon name="calendar-outline" size={20} color="#aaa" style={styles.icon} />
+                <Icon
+                  name="calendar-outline"
+                  size={20}
+                  color="#aaa"
+                  style={styles.icon}
+                />
                 <TextInput
                   placeholder="Event Title *"
                   placeholderTextColor="#aaa"
                   style={styles.input}
                   onChangeText={setTitle}
                   value={title}
-                  maxLength={100}
-                  autoCapitalize="words"
-                  returnKeyType="next"
                 />
               </View>
 
-              <View style={[styles.inputContainer, { alignItems: 'flex-start' }]}>
-                <Icon name="document-text-outline" size={20} color="#aaa" style={[styles.icon, { marginTop: 8 }]} />
+              <View
+                style={[styles.inputContainer, { alignItems: "flex-start" }]}
+              >
+                <Icon
+                  name="document-text-outline"
+                  size={20}
+                  color="#aaa"
+                  style={[styles.icon, { marginTop: 8 }]}
+                />
                 <TextInput
                   placeholder="Event Description *"
                   placeholderTextColor="#aaa"
-                  style={[styles.input, styles.descriptionInput]}
+                  style={[
+                    styles.input,
+                    { height: 80, textAlignVertical: "top" },
+                  ]}
                   onChangeText={setDescription}
                   value={description}
                   multiline
-                  textAlignVertical="top"
-                  maxLength={500}
-                  blurOnSubmit={true}
                 />
               </View>
 
               <View style={styles.dateTimeContainer}>
-                <TouchableOpacity 
-                  style={styles.dateTimeButton} 
-                  onPress={() => setShowDatePicker(true)} 
-                  activeOpacity={0.7}
+                <TouchableOpacity
+                  onPress={() => setShowDatePicker(true)}
+                  style={styles.dateTimeButton}
                 >
-                  <Icon name="calendar-outline" size={18} color="#aaa" style={styles.icon} />
+                  <Icon
+                    name="calendar-outline"
+                    size={18}
+                    color="#aaa"
+                    style={styles.icon}
+                  />
                   <Text style={styles.dateTimeText}>
                     {date.toLocaleDateString()}
                   </Text>
                 </TouchableOpacity>
-
-                <TouchableOpacity 
-                  style={styles.dateTimeButton} 
-                  onPress={() => setShowTimePicker(true)} 
-                  activeOpacity={0.7}
+                <TouchableOpacity
+                  onPress={() => setShowTimePicker(true)}
+                  style={styles.dateTimeButton}
                 >
-                  <Icon name="time-outline" size={18} color="#aaa" style={styles.icon} />
+                  <Icon
+                    name="time-outline"
+                    size={18}
+                    color="#aaa"
+                    style={styles.icon}
+                  />
                   <Text style={styles.dateTimeText}>
-                    {date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {date.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </Text>
                 </TouchableOpacity>
               </View>
 
-              <Text style={styles.selectedDateTime}>
-                {formatDate(date)}
-              </Text>
+              <Text style={styles.selectedDateTime}>{formatDate(date)}</Text>
 
               {showDatePicker && (
                 <DateTimePicker
@@ -165,8 +185,6 @@ export default function CreateEventScreen({ navigation }: any) {
                   mode="date"
                   display="default"
                   onChange={onChangeDate}
-                  minimumDate={new Date()}
-                  themeVariant="dark"
                 />
               )}
 
@@ -177,7 +195,6 @@ export default function CreateEventScreen({ navigation }: any) {
                   display="default"
                   onChange={onChangeTime}
                   is24Hour={true}
-                  themeVariant="dark"
                 />
               )}
 
@@ -185,13 +202,17 @@ export default function CreateEventScreen({ navigation }: any) {
                 style={[styles.saveButton, loading && styles.disabledButton]}
                 onPress={handleAddEvent}
                 disabled={loading}
-                activeOpacity={0.8}
               >
                 {loading ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
                   <>
-                    <Icon name="save-outline" size={18} color="#fff" style={{ marginRight: 8 }} />
+                    <Icon
+                      name="save-outline"
+                      size={18}
+                      color="#fff"
+                      style={{ marginRight: 8 }}
+                    />
                     <Text style={styles.buttonText}>Save Event</Text>
                   </>
                 )}
@@ -205,34 +226,15 @@ export default function CreateEventScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 60,
-  },
-  inner: {
-    flex: 1,
-  },
-  scrollContainer: {
-    paddingBottom: 20,
-  },
-  header: {
-    marginBottom: 20,
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    color: "#fff",
-    fontWeight: "bold",
-  },
+  container: { flex: 1, paddingHorizontal: 24, paddingTop: 60 },
+  inner: { flex: 1 },
+  scrollContainer: { paddingBottom: 20 },
+  header: { marginBottom: 20, alignItems: "center" },
+  title: { fontSize: 24, color: "#fff", fontWeight: "bold" },
   formContainer: {
     backgroundColor: "rgba(255,255,255,0.07)",
     padding: 16,
     borderRadius: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.25,
-    shadowRadius: 5,
-    shadowOffset: { width: 0, height: 4 },
   },
   inputContainer: {
     flexDirection: "row",
@@ -242,42 +244,26 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingVertical: 6,
   },
-  icon: {
-    marginRight: 10,
-  },
-  input: {
-    flex: 1,
-    color: "#fff",
-    fontSize: 15,
-    paddingVertical: 6,
-    paddingHorizontal: 4,
-  },
-  descriptionInput: {
-    height: 80,
-    paddingTop: 8,
-  },
+  icon: { marginRight: 10 },
+  input: { flex: 1, color: "#fff", fontSize: 15 },
   dateTimeContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 12,
-    marginTop: 8,
   },
   dateTimeButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.08)",
     padding: 10,
     borderRadius: 8,
     flex: 1,
     marginHorizontal: 4,
   },
-  dateTimeText: {
-    color: '#fff',
-    fontSize: 14,
-  },
+  dateTimeText: { color: "#fff", fontSize: 14 },
   selectedDateTime: {
-    color: '#00c6ff',
-    textAlign: 'center',
+    color: "#00c6ff",
+    textAlign: "center",
     marginBottom: 16,
     fontSize: 13,
   },
@@ -287,15 +273,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: "center",
     marginTop: 12,
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
   },
-  disabledButton: {
-    opacity: 0.7,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "600",
-  },
+  disabledButton: { opacity: 0.7 },
+  buttonText: { color: "#fff", fontSize: 15, fontWeight: "600" },
 });

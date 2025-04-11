@@ -26,13 +26,18 @@ import moment from "moment";
 export default function DashboardScreen({ navigation }: any) {
   const [events, setEvents] = useState<any[]>([]);
   const [favorites, setFavorites] = useState<{ [key: string]: boolean }>({});
-  const [favoriteLoadingId, setFavoriteLoadingId] = useState<string | null>(null);
+  const [favoriteLoadingId, setFavoriteLoadingId] = useState<string | null>(
+    null
+  );
   const [loading, setLoading] = useState(true);
 
   const userId = auth.currentUser?.uid;
 
   useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "events"), (snapshot) => {
+    if (!userId) return;
+
+    const eventRef = collection(db, "users", userId, "events");
+    const unsubscribe = onSnapshot(eventRef, (snapshot) => {
       const data = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
@@ -43,7 +48,7 @@ export default function DashboardScreen({ navigation }: any) {
     });
 
     return unsubscribe;
-  }, []);
+  }, [userId]);
 
   useEffect(() => {
     if (!userId) return;
@@ -66,10 +71,9 @@ export default function DashboardScreen({ navigation }: any) {
       {
         text: "Yes",
         onPress: async () => {
-          await deleteDoc(doc(db, "events", id));
-          if (userId) {
-            await deleteDoc(doc(db, "users", userId, "favorites", id));
-          }
+          if (!userId) return;
+          await deleteDoc(doc(db, "users", userId, "events", id));
+          await deleteDoc(doc(db, "users", userId, "favorites", id));
         },
       },
     ]);
@@ -103,7 +107,6 @@ export default function DashboardScreen({ navigation }: any) {
         });
       }
     } catch (error) {
-      console.error("Toggle favorite error:", error);
       Alert.alert("Error", "Something went wrong while updating favorites.");
     } finally {
       setFavoriteLoadingId(null);
@@ -114,7 +117,11 @@ export default function DashboardScreen({ navigation }: any) {
     const isFavorited = favorites[item.id];
 
     return (
-      <Animatable.View animation="fadeInUp" duration={600} style={styles.eventCard}>
+      <Animatable.View
+        animation="fadeInUp"
+        duration={600}
+        style={styles.eventCard}
+      >
         <View style={styles.eventHeader}>
           <Text style={styles.eventTitle}>{item.title}</Text>
           <TouchableOpacity
@@ -147,11 +154,17 @@ export default function DashboardScreen({ navigation }: any) {
           </View>
 
           <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.editButton} onPress={() => handleEdit(item.id)}>
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() => handleEdit(item.id)}
+            >
               <Icon name="pencil-outline" size={16} color="#fff" />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.deleteButton} onPress={() => handleDelete(item.id)}>
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() => handleDelete(item.id)}
+            >
               <Icon name="trash-outline" size={16} color="#fff" />
             </TouchableOpacity>
           </View>
@@ -161,21 +174,33 @@ export default function DashboardScreen({ navigation }: any) {
   };
 
   return (
-    <LinearGradient colors={["#0f2027", "#203a43", "#2c5364"]} style={styles.container}>
+    <LinearGradient
+      colors={["#0f2027", "#203a43", "#2c5364"]}
+      style={styles.container}
+    >
       <View style={styles.topButtons}>
-        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate("CreateEvent")}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => navigation.navigate("CreateEvent")}
+        >
           <View style={styles.iconCircle}>
             <Icon name="add-circle-outline" size={24} color="#00c6ff" />
           </View>
           <Text style={styles.iconButtonText}>Add</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={() => navigation.navigate("Favorites")}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => navigation.navigate("Favorites")}
+        >
           <View style={styles.iconCircle}>
             <Icon name="heart-outline" size={24} color="#00c6ff" />
           </View>
           <Text style={styles.iconButtonText}>Favorites</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.iconButton} onPress={() => signOut(auth)}>
+        <TouchableOpacity
+          style={styles.iconButton}
+          onPress={() => signOut(auth)}
+        >
           <View style={styles.iconCircle}>
             <Icon name="log-out-outline" size={24} color="#ff6666" />
           </View>
@@ -185,7 +210,9 @@ export default function DashboardScreen({ navigation }: any) {
 
       <View style={styles.middleSection}>
         <Text style={styles.sectionTitle}>Your Events</Text>
-        <Text style={styles.sectionSubtitle}>Tap the icons to manage each event</Text>
+        <Text style={styles.sectionSubtitle}>
+          Tap the icons to manage each event
+        </Text>
       </View>
 
       {loading ? (
@@ -194,7 +221,9 @@ export default function DashboardScreen({ navigation }: any) {
         <View style={styles.emptyState}>
           <Icon name="calendar-outline" size={48} color="#aaa" />
           <Text style={styles.noEventsText}>No events found</Text>
-          <Text style={styles.noEventsSubtext}>Tap the + button to create your first event</Text>
+          <Text style={styles.noEventsSubtext}>
+            Tap the + button to create your first event
+          </Text>
         </View>
       ) : (
         <FlatList
@@ -202,7 +231,6 @@ export default function DashboardScreen({ navigation }: any) {
           keyExtractor={(item) => item.id}
           renderItem={renderItem}
           contentContainerStyle={{ paddingBottom: 40 }}
-          showsVerticalScrollIndicator={false}
         />
       )}
     </LinearGradient>
@@ -210,43 +238,28 @@ export default function DashboardScreen({ navigation }: any) {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 50,
-  },
+  container: { flex: 1, paddingHorizontal: 20, paddingTop: 50 },
   topButtons: {
     flexDirection: "row",
     justifyContent: "space-around",
     marginBottom: 20,
   },
-  iconButton: {
-    alignItems: "center",
-    width: 80,
-  },
+  iconButton: { alignItems: "center", width: 80 },
   iconCircle: {
     backgroundColor: "rgba(255, 255, 255, 0.08)",
     padding: 12,
     borderRadius: 50,
     marginBottom: 6,
   },
-  iconButtonText: {
-    color: "#ccc",
-    fontSize: 12,
-  },
-  middleSection: {
-    marginBottom: 20,
-  },
+  iconButtonText: { color: "#ccc", fontSize: 12 },
+  middleSection: { marginBottom: 20 },
   sectionTitle: {
     color: "#fff",
     fontSize: 22,
     fontWeight: "bold",
     marginBottom: 4,
   },
-  sectionSubtitle: {
-    color: "#aaa",
-    fontSize: 14,
-  },
+  sectionSubtitle: { color: "#aaa", fontSize: 14 },
   eventCard: {
     backgroundColor: "rgba(255,255,255,0.05)",
     padding: 16,
@@ -259,39 +272,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 8,
   },
-  eventTitle: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
-    flex: 1,
-  },
-  eventDescription: {
-    color: "#ddd",
-    fontSize: 14,
-    marginBottom: 12,
-    lineHeight: 20,
-  },
+  eventTitle: { color: "#fff", fontSize: 16, fontWeight: "600", flex: 1 },
+  eventDescription: { color: "#ddd", fontSize: 14, marginBottom: 12 },
   eventFooter: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
   },
-  dateContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  eventDate: {
-    color: "#aaa",
-    fontSize: 13,
-    marginLeft: 6,
-  },
-  favoriteButton: {
-    padding: 6,
-  },
-  actionButtons: {
-    flexDirection: "row",
-    gap: 8,
-  },
+  dateContainer: { flexDirection: "row", alignItems: "center" },
+  eventDate: { color: "#aaa", fontSize: 13, marginLeft: 6 },
+  favoriteButton: { padding: 6 },
+  actionButtons: { flexDirection: "row", gap: 8 },
   editButton: {
     backgroundColor: "#00c6ff",
     padding: 8,

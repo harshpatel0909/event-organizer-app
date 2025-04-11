@@ -10,7 +10,7 @@ import {
   Platform,
   ActivityIndicator,
 } from "react-native";
-import { createUserWithEmailAndPassword, signOut } from "firebase/auth"; 
+import { createUserWithEmailAndPassword, signOut } from "firebase/auth";
 import { auth } from "../services/firebaseConfig";
 import * as Animatable from "react-native-animatable";
 import { LinearGradient } from "expo-linear-gradient";
@@ -38,9 +38,9 @@ export default function SignUpScreen({ navigation }: any) {
     try {
       setLoading(true);
       await createUserWithEmailAndPassword(auth, email.trim(), password);
-      await signOut(auth); 
+      await signOut(auth);
       Alert.alert("Success", "Account created successfully! Please log in.");
-      navigation.navigate("SignIn"); 
+      navigation.navigate("SignIn");
     } catch (error: any) {
       Alert.alert("Error", error.message);
     } finally {
@@ -49,17 +49,31 @@ export default function SignUpScreen({ navigation }: any) {
   };
 
   return (
-    <LinearGradient colors={["#0f2027", "#203a43", "#2c5364"]} style={styles.container}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.inner}>
+    <LinearGradient
+      colors={["#0f2027", "#203a43", "#2c5364"]}
+      style={styles.container}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={styles.inner}
+      >
         <Animatable.View animation="fadeInDown" style={styles.header}>
           <Text style={styles.title}>Create Account</Text>
           <Text style={styles.subtitle}>Sign up to get started</Text>
         </Animatable.View>
 
-        <Animatable.View animation="fadeInUp" delay={300} style={styles.formContainer}>
-        
+        <Animatable.View
+          animation="fadeInUp"
+          delay={300}
+          style={styles.formContainer}
+        >
           <View style={styles.inputContainer}>
-            <Icon name="mail-outline" size={20} color="#ccc" style={styles.icon} />
+            <Icon
+              name="mail-outline"
+              size={20}
+              color="#ccc"
+              style={styles.icon}
+            />
             <TextInput
               placeholder="Email"
               placeholderTextColor="#ccc"
@@ -71,9 +85,13 @@ export default function SignUpScreen({ navigation }: any) {
             />
           </View>
 
-     
           <View style={styles.inputContainer}>
-            <Icon name="lock-closed-outline" size={20} color="#ccc" style={styles.icon} />
+            <Icon
+              name="lock-closed-outline"
+              size={20}
+              color="#ccc"
+              style={styles.icon}
+            />
             <TextInput
               placeholder="Password"
               placeholderTextColor="#ccc"
@@ -83,13 +101,21 @@ export default function SignUpScreen({ navigation }: any) {
               value={password}
             />
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              <Icon name={showPassword ? "eye-off" : "eye"} size={20} color="#ccc" />
+              <Icon
+                name={showPassword ? "eye-off" : "eye"}
+                size={20}
+                color="#ccc"
+              />
             </TouchableOpacity>
           </View>
 
-       
           <View style={styles.inputContainer}>
-            <Icon name="lock-closed-outline" size={20} color="#ccc" style={styles.icon} />
+            <Icon
+              name="lock-closed-outline"
+              size={20}
+              color="#ccc"
+              style={styles.icon}
+            />
             <TextInput
               placeholder="Confirm Password"
               placeholderTextColor="#ccc"
@@ -98,12 +124,22 @@ export default function SignUpScreen({ navigation }: any) {
               onChangeText={setConfirmPassword}
               value={confirmPassword}
             />
-            <TouchableOpacity onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
-              <Icon name={showConfirmPassword ? "eye-off" : "eye"} size={20} color="#ccc" />
+            <TouchableOpacity
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+            >
+              <Icon
+                name={showConfirmPassword ? "eye-off" : "eye"}
+                size={20}
+                color="#ccc"
+              />
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.signUpButton} onPress={handleSignUp} disabled={loading}>
+          <TouchableOpacity
+            style={styles.signUpButton}
+            onPress={handleSignUp}
+            disabled={loading}
+          >
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
@@ -111,7 +147,6 @@ export default function SignUpScreen({ navigation }: any) {
             )}
           </TouchableOpacity>
 
-     
           <TouchableOpacity onPress={() => navigation.navigate("SignIn")}>
             <Text style={styles.signInText}>
               Already have an account? <Text style={styles.link}>Sign In</Text>

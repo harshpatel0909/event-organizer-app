@@ -16,8 +16,6 @@ import * as Animatable from "react-native-animatable";
 import { LinearGradient } from "expo-linear-gradient";
 import Icon from "react-native-vector-icons/Ionicons";
 
-
-
 export default function SignInScreen({ navigation }: any) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -41,16 +39,31 @@ export default function SignInScreen({ navigation }: any) {
   };
 
   return (
-    <LinearGradient colors={["#0f2027", "#203a43", "#2c5364"]} style={styles.container}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.inner}>
+    <LinearGradient
+      colors={["#0f2027", "#203a43", "#2c5364"]}
+      style={styles.container}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={styles.inner}
+      >
         <Animatable.View animation="fadeInDown" style={styles.header}>
           <Text style={styles.title}>Welcome Back</Text>
           <Text style={styles.subtitle}>Sign in to continue</Text>
         </Animatable.View>
 
-        <Animatable.View animation="fadeInUp" delay={300} style={styles.formContainer}>
+        <Animatable.View
+          animation="fadeInUp"
+          delay={300}
+          style={styles.formContainer}
+        >
           <View style={styles.inputContainer}>
-            <Icon name="mail-outline" size={20} color="#ccc" style={styles.icon} />
+            <Icon
+              name="mail-outline"
+              size={20}
+              color="#ccc"
+              style={styles.icon}
+            />
             <TextInput
               placeholder="Email"
               placeholderTextColor="#ccc"
@@ -63,7 +76,12 @@ export default function SignInScreen({ navigation }: any) {
           </View>
 
           <View style={styles.inputContainer}>
-            <Icon name="lock-closed-outline" size={20} color="#ccc" style={styles.icon} />
+            <Icon
+              name="lock-closed-outline"
+              size={20}
+              color="#ccc"
+              style={styles.icon}
+            />
             <TextInput
               placeholder="Password"
               placeholderTextColor="#ccc"
@@ -73,11 +91,19 @@ export default function SignInScreen({ navigation }: any) {
               value={password}
             />
             <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
-              <Icon name={showPassword ? "eye-off" : "eye"} size={20} color="#ccc" />
+              <Icon
+                name={showPassword ? "eye-off" : "eye"}
+                size={20}
+                color="#ccc"
+              />
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity style={styles.signInButton} onPress={handleSignIn} disabled={loading}>
+          <TouchableOpacity
+            style={styles.signInButton}
+            onPress={handleSignIn}
+            disabled={loading}
+          >
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
@@ -86,7 +112,9 @@ export default function SignInScreen({ navigation }: any) {
           </TouchableOpacity>
 
           <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
-            <Text style={styles.signUpText}>Don't have an account? <Text style={styles.link}>Sign Up</Text></Text>
+            <Text style={styles.signUpText}>
+              Don't have an account? <Text style={styles.link}>Sign Up</Text>
+            </Text>
           </TouchableOpacity>
         </Animatable.View>
       </KeyboardAvoidingView>
